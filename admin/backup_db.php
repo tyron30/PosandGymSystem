@@ -12,7 +12,7 @@ if ($user['role'] !== 'admin' && $user['role'] !== 'cashier') {
     exit();
 }
 
-// Database credentials
+// Database credentials (consistent with MySQL Workbench)
 $host = 'localhost';
 $user_db = 'root';
 $pass = '';
@@ -27,17 +27,14 @@ header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Pragma: no-cache');
 header('Expires: 0');
 
-            // Execute mysqldump command with full path
-            $command = "\"C:\\xampp\\mysql\\bin\\mysqldump.exe\" --host=$host --user=$user_db --password=$pass $db_name";
-            exec($command, $output, $return_var);
-
-            if ($return_var !== 0) {
-                // If mysqldump fails, output error
-                echo "Error: Unable to backup database.";
-            } else {
-                // Output the SQL dump
-                echo implode("\n", $output);
-            }
+// Execute mysqldump command with full path
+$command = '"C:\\xampp\\mysql\\bin\\mysqldump.exe" --host=' . $host . ' --user=' . $user_db . ' --password=' . $pass . ' ' . $db_name;
+exec($command, $output, $return_var);
+if ($return_var !== 0) {
+    echo "Error: Unable to backup database.";
+} else {
+    echo implode("\n", $output);
+}
 
 exit();
 ?>

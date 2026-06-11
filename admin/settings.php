@@ -50,16 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         if (in_array($_FILES['logo']['type'], $allowed_types) && $_FILES['logo']['size'] <= $max_size) {
             $file_extension = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
+            $logo_dir = '../uploads/gym_logos/';
+            if (!is_dir($logo_dir)) mkdir($logo_dir, 0755, true);
             $new_filename = 'gym_logo_' . time() . '.' . $file_extension;
-            $upload_path = '../' . $new_filename;
+            $upload_path = $logo_dir . $new_filename;
 
             if (move_uploaded_file($_FILES['logo']['tmp_name'], $upload_path)) {
                 $stmt = $conn->prepare("UPDATE gym_settings SET logo_path = ? WHERE id = 1");
-                $stmt->bind_param("s", $new_filename);
+$logo_path = 'uploads/gym_logos/' . $new_filename; $stmt->bind_param("s", $logo_path);
                 if ($stmt->execute()) {
                     $message = "Gym logo updated successfully!";
                     $message_type = "success";
-                    $settings['logo_path'] = $new_filename;
+                    $settings['logo_path'] = 'uploads/gym_logos/' . $new_filename;
                 } else {
                     $message = "Error updating logo in database.";
                     $message_type = "danger";
@@ -79,16 +81,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         if (in_array($_FILES['background']['type'], $allowed_types) && $_FILES['background']['size'] <= $max_size) {
             $file_extension = pathinfo($_FILES['background']['name'], PATHINFO_EXTENSION);
+            $bg_dir = '../uploads/gym_backgrounds/';
+            if (!is_dir($bg_dir)) mkdir($bg_dir, 0755, true);
             $new_filename = 'gym_background_' . time() . '.' . $file_extension;
-            $upload_path = '../' . $new_filename;
+            $upload_path = $bg_dir . $new_filename;
 
             if (move_uploaded_file($_FILES['background']['tmp_name'], $upload_path)) {
                 $stmt = $conn->prepare("UPDATE gym_settings SET background_path = ? WHERE id = 1");
-                $stmt->bind_param("s", $new_filename);
+$bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $bg_path);
                 if ($stmt->execute()) {
                     $message = "Gym background updated successfully!";
                     $message_type = "success";
-                    $settings['background_path'] = $new_filename;
+                    $settings['background_path'] = 'uploads/gym_backgrounds/' . $new_filename;
                 } else {
                     $message = "Error updating background in database.";
                     $message_type = "danger";

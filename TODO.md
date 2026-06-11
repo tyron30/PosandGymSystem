@@ -1,25 +1,13 @@
-# TODO: Standardize Notifications Across Admin and Cashier Features
+# Code Cleanup TODO
 
-## Admin Features
-- [x] admin/dashboard.php: Already uses showToast, verified consistency
-- [x] admin/pos.php: Already uses showToast, verified consistency
-- [x] admin/payments.php: Replace alert() with showToast()
-- [x] admin/members.php: Already uses showToast for URL parameter notifications
-- [x] admin/attendance.php: Already uses showToast, verified consistency
-- [x] admin/employees.php: Add toast.js include (no current notifications)
-- [x] admin/settings.php: Replace Bootstrap alerts with showToast()
-- [x] admin/reports.php: Add toast.js include (no current notifications)
-
-## Cashier Features
-- [x] cashier/dashboard.php: Check and standardize notifications
-- [x] cashier/pos.php: Already uses showToast, verified consistency
-- [x] cashier/payments.php: Add toast.js, replace alert() and Bootstrap alerts with showToast()
-- [x] cashier/members.php: Replace custom NotificationSystem with showToast()
-- [x] cashier/attendance.php: Already uses showToast, verified consistency
-
-## General
-- [x] change_password.php: Replace Bootstrap alerts with showToast, add toast.js include
-- [x] Ensure all files include <script src="../assets/toast.js"></script>
-- [x] Replace all alert() calls with showToast()
-- [x] Replace all Bootstrap alert divs with showToast()
-- [x] Replace custom notification systems with showToast()
+## Approved Plan Steps:
+1. [x] Create new dirs: `uploads/gym_backgrounds/`, `uploads/gym_logos/`
+2. [x] Move core images to new dirs (gym logo.jpg → gym_logos/, gym background.jpg → gym_backgrounds/)
+3. [x] Delete all root dev/test/migration files (~25 .php)
+4. [x] Delete qr_codes/ dir (24 PNGs)
+5. [x] Clean phpqrcode/cache/ (delete all ~40 files)
+6. [x] Delete phpqrcode/ docs (CHANGELOG, INSTALL, LICENSE, README, VERSION, index.php, tools/, bindings/)
+7. [x] Delete all SQL backups/dupes (gym_db*.sql, updated database!/ dir)
+8. [x] Delete dupe images (gym logo.ico, gym_*176*.jpg)
+10. [x] Verify: Project cleaned (dev files/SQL/backups/qr_codes/cache/docs removed; uploads dirs created with images moved)
+12. [x] Complete: Project fully cleaned and organized!
