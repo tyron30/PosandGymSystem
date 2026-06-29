@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 include "../config/db.php";
 
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'cashier') {
@@ -351,14 +351,30 @@ $members = $conn->query("SELECT id, fullname FROM members WHERE status = 'ACTIVE
                     .then(data => {
                         console.log('Response data:', data);
                         if (data.success) {
-                            resultDiv.className = 'alert alert-success';
-                            resultDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + data.success;
+                            if (data.type === 'checkout') {
+                                resultDiv.className = 'alert alert-warning';
+                                resultDiv.innerHTML = '<i class="fas fa-sign-out-alt me-2"></i>' + data.success;
+                            } else {
+                                resultDiv.className = 'alert alert-success';
+                                let msg = '<i class="fas fa-sign-in-alt me-2"></i>' + data.success;
+                                if (data.info) msg += '<div class="mt-1 small"><i class="fas fa-clock me-1"></i>' + data.info + '</div>';
+                                resultDiv.innerHTML = msg;
+                            }
                             resultDiv.style.display = 'block';
 
                             // Reload the page after 2 seconds to show updated attendance
                             setTimeout(function() {
                                 location.reload();
                             }, 2000);
+                        } else if (data.type === 'too_soon') {
+                            // Too soon to check out - warn and restart scanner
+                            resultDiv.className = 'alert alert-warning';
+                            resultDiv.innerHTML = '<i class="fas fa-clock me-2"></i>' + data.error;
+                            resultDiv.style.display = 'block';
+                            setTimeout(function() {
+                                resultDiv.style.display = 'none';
+                                startScanner();
+                            }, 4000);
                         } else {
                             resultDiv.className = 'alert alert-danger';
                             resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>' + data.error;
