@@ -186,6 +186,46 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
             $message = "Error updating membership fees.";
             $message_type = "danger";
         }
+    } elseif (isset($_POST['change_password'])) {
+        // Change admin password
+        $current_password = $_POST['current_password'];
+        $new_password = $_POST['new_password'];
+        $confirm_password = $_POST['confirm_password'];
+
+        $errors = [];
+
+        if (!password_verify($current_password, $user['password'])) {
+            $errors[] = "Current password is incorrect.";
+        }
+
+        if (empty($new_password)) {
+            $errors[] = "New password is required.";
+        } elseif (strlen($new_password) < 6) {
+            $errors[] = "New password must be at least 6 characters long.";
+        }
+
+        if ($new_password !== $confirm_password) {
+            $errors[] = "New password and confirmation do not match.";
+        }
+
+        if (empty($errors)) {
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $stmt->bind_param("si", $hashed_password, $user['id']);
+            if ($stmt->execute()) {
+                $message = "Password changed successfully!";
+                $message_type = "success";
+                $_SESSION['user']['password'] = $hashed_password;
+                $user['password'] = $hashed_password;
+            } else {
+                $message = "Failed to update password. Please try again.";
+                $message_type = "danger";
+            }
+            $stmt->close();
+        } else {
+            $message = implode(' ', $errors);
+            $message_type = "danger";
+        }
     }
 }
 ?>
@@ -198,7 +238,7 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
     <title>Settings - Gym Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="../assets/style.css?v=20260630d" rel="stylesheet">
+    <link href="../assets/style.css?v=20260630f" rel="stylesheet">
     <script src="../assets/toast.js"></script>
 </head>
 <body>
@@ -246,11 +286,6 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
                             <i class="fas fa-cog me-2"></i><span>Settings</span>
                         </a>
                     </li>
-                      <li class="nav-item mb-2">
-                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../change_password.php">
-                            <i class="fas fa-key me-2"></i><span>Change Password</span>
-                        </a>
-                    </li>
                     <li class="nav-item mt-4">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../logout.php">
                             <i class="fas fa-sign-out-alt me-2"></i><span>Logout</span>
@@ -282,7 +317,7 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
                         <div class="row">
                             <!-- Gym Name Settings -->
                             <div class="col-md-6 mb-4">
-                                <div class="card">
+                                <div class="card h-100">
                                     <div class="card-header">
                                         <h5 class="card-title mb-0"><i class="fas fa-building me-2"></i>Gym Name</h5>
                                     </div>
@@ -303,7 +338,7 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
 
                             <!-- Student Discount Feature Settings -->
                             <div class="col-md-6 mb-4">
-                                <div class="card">
+                                <div class="card h-100">
                                     <div class="card-header">
                                         <h5 class="card-title mb-0"><i class="fas fa-graduation-cap me-2"></i>Student Discount Feature</h5>
                                     </div>
@@ -332,7 +367,7 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
 
                             <!-- Logo Settings -->
                             <div class="col-md-6 mb-4">
-                                <div class="card">
+                                <div class="card h-100">
                                     <div class="card-header">
                                         <h5 class="card-title mb-0"><i class="fas fa-image me-2"></i>Gym Logo</h5>
                                     </div>
@@ -358,7 +393,7 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
 
                             <!-- Background Settings -->
                             <div class="col-md-6 mb-4">
-                                <div class="card">
+                                <div class="card h-100">
                                     <div class="card-header">
                                         <h5 class="card-title mb-0"><i class="fas fa-image me-2"></i>Gym Background</h5>
                                     </div>
@@ -384,7 +419,7 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
 
                             <!-- Database Management -->
                             <div class="col-md-6 mb-4">
-                                <div class="card">
+                                <div class="card h-100">
                                     <div class="card-header">
                                         <h5 class="card-title mb-0"><i class="fas fa-database me-2"></i>Database Management</h5>
                                     </div>
@@ -402,9 +437,38 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
                                 </div>
                             </div>
 
+                            <!-- Change Password -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0"><i class="fas fa-key me-2"></i>Change Password</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form method="POST">
+                                            <div class="mb-3">
+                                                <label for="current_password" class="form-label">Current Password *</label>
+                                                <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="new_password" class="form-label">New Password *</label>
+                                                <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6">
+                                                <div class="form-text">Password must be at least 6 characters long.</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="confirm_password" class="form-label">Confirm New Password *</label>
+                                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="6">
+                                            </div>
+                                            <button type="submit" name="change_password" class="btn btn-primary">
+                                                <i class="fas fa-save me-2"></i>Change Password
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Sidebar Theme Settings -->
                             <div class="col-md-6 mb-4">
-                                <div class="card">
+                                <div class="card h-100">
                                     <div class="card-header">
                                         <h5 class="card-title mb-0"><i class="fas fa-palette me-2"></i>Sidebar Theme</h5>
                                     </div>
@@ -564,6 +628,20 @@ $bg_path = 'uploads/gym_backgrounds/' . $new_filename; $stmt->bind_param("s", $b
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Password confirmation validation
+        const confirmPasswordField = document.getElementById('confirm_password');
+        if (confirmPasswordField) {
+            confirmPasswordField.addEventListener('input', function() {
+                const newPassword = document.getElementById('new_password').value;
+                const confirmPassword = this.value;
+                if (newPassword !== confirmPassword) {
+                    this.setCustomValidity('Passwords do not match');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+        }
+
         // Show toasts for PHP messages
         document.addEventListener('DOMContentLoaded', function() {
             <?php if (!empty($message)): ?>

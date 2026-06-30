@@ -98,7 +98,7 @@ $selected_member_id = isset($_GET['member_id']) ? (int)$_GET['member_id'] : null
     <title>Payment Management - Gym Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="../assets/style.css?v=20260630d" rel="stylesheet">
+    <link href="../assets/style.css?v=20260630f" rel="stylesheet">
     <script src="../assets/toast.js"></script>
 </head>
 <body>
@@ -144,11 +144,6 @@ $selected_member_id = isset($_GET['member_id']) ? (int)$_GET['member_id'] : null
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?> active" href="settings.php">
                             <i class="fas fa-cog me-2"></i><span>Settings</span>
-                        </a>
-                    </li>
-                      <li class="nav-item mb-2">
-                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../change_password.php">
-                            <i class="fas fa-key me-2"></i><span>Change Password</span>
                         </a>
                     </li>
                     <li class="nav-item mt-4">
