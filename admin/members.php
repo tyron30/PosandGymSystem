@@ -34,7 +34,8 @@ function generateReceiptNo() {
 }
 
 // Function to generate QR code
-function generateQRCode($qr_token) {
+// Layout is uniform across the whole system: [TOP: gym name] [QR + logo] [BOTTOM: member name]
+function generateQRCode($qr_token, $member_name = '') {
     require_once __DIR__ . '/../phpqrcode/qrlib.php';
 
     // Load gym settings for branding
@@ -68,13 +69,15 @@ function generateQRCode($qr_token) {
     $qr_w     = imagesx($qr_img);
     $qr_h     = imagesy($qr_img);
     $banner_h = 48;
+    $footer_h = !empty($member_name) ? 40 : 0;
     $padding  = 16;
     $total_w  = $qr_w + $padding * 2;
-    $total_h  = $qr_h + $banner_h + $padding * 2;
+    $total_h  = $qr_h + $banner_h + $footer_h + $padding * 2;
 
     $canvas    = imagecreatetruecolor($total_w, $total_h);
     $dark_teal = imagecolorallocate($canvas, 0, 80, 80);
     $white     = imagecolorallocate($canvas, 255, 255, 255);
+    $dark_text = imagecolorallocate($canvas, 20, 20, 20);
     imagefill($canvas, 0, 0, $white);
     imagefilledrectangle($canvas, 0, 0, $total_w, $banner_h, $dark_teal);
 
@@ -107,6 +110,17 @@ function generateQRCode($qr_token) {
             imagecopy($canvas, $lr, $lx, $ly, 0, 0, $logo_size, $logo_size);
             imagedestroy($lr); imagedestroy($logo_src);
         }
+    }
+
+    // Bottom footer: member name, centered (drawn twice with a 1px offset so it reads bolder/clearer)
+    if (!empty($member_name)) {
+        $footer_y   = $banner_h + $padding + $qr_h + $padding;
+        $name_label = strlen($member_name) > $max_chars ? substr($member_name, 0, $max_chars - 1) . '.' : $member_name;
+        $name_w     = strlen($name_label) * imagefontwidth($font);
+        $name_x     = (int)(($total_w - $name_w) / 2);
+        $name_y     = (int)($footer_y + ($footer_h - imagefontheight($font)) / 2);
+        imagestring($canvas, $font, $name_x + 1, $name_y, $name_label, $dark_text);
+        imagestring($canvas, $font, $name_x, $name_y, $name_label, $dark_text);
     }
 
     imagepng($canvas, $filepath);
@@ -231,7 +245,7 @@ if (isset($_POST['add_member'])) {
         $qr_token = generateQRToken();
     }
     if (empty($qr_code_path)) {
-        $qr_code_path = generateQRCode($qr_token);
+        $qr_code_path = generateQRCode($qr_token, $fullname);
     }
 
     $stmt = $conn->prepare("INSERT INTO members (member_code, fullname, email, phone, address, plan, start_date, end_date, is_student, student_id, qr_code, qr_token, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -286,7 +300,7 @@ if (isset($_POST['quick_add_member'])) {
     $qr_token     = isset($_POST['qr_token']) && !empty($_POST['qr_token']) ? $_POST['qr_token'] : '';
     $qr_code_path = isset($_POST['generated_qr_path']) && !empty($_POST['generated_qr_path']) ? $_POST['generated_qr_path'] : '';
     if (empty($qr_token))     $qr_token     = generateQRToken();
-    if (empty($qr_code_path)) $qr_code_path = generateQRCode($qr_token);
+    if (empty($qr_code_path)) $qr_code_path = generateQRCode($qr_token, $fullname);
 
     $stmt = $conn->prepare("INSERT INTO members (member_code, fullname, phone, plan, start_date, end_date, is_student, student_id, qr_code, qr_token, created_by) VALUES (?, ?, ?, 'Per Session', ?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("sssssisssi", $member_code, $fullname, $phone, $today, $today, $is_student, $student_id, $qr_code_path, $qr_token, $user['id']);
@@ -328,6 +342,15 @@ if (isset($_POST['regenerate_qr'])) {
         $logo_path = __DIR__ . '/../' . $gsr['logo_path'];
     }
 
+    // Fetch member name for the footer label
+    $member_name = '';
+    $mn = $conn->prepare("SELECT fullname FROM members WHERE id = ?");
+    $mn->bind_param("i", $member_id);
+    $mn->execute();
+    $mn_res = $mn->get_result();
+    if ($mn_row = $mn_res->fetch_assoc()) { $member_name = $mn_row['fullname']; }
+    $mn->close();
+
     // Generate new unique token
     require_once __DIR__ . '/../phpqrcode/qrlib.php';
     do {
@@ -350,26 +373,28 @@ if (isset($_POST['regenerate_qr'])) {
     QRcode::png($new_token, $tmp_file, QR_ECLEVEL_H, 10, 4);
 
     if (file_exists($tmp_file)) {
-        $qr_img  = imagecreatefrompng($tmp_file);
-        $qr_w    = imagesx($qr_img);
-        $qr_h    = imagesy($qr_img);
-        $label_h = 40;
-        $padding = 20;
-        $total_w = $qr_w + $padding * 2;
-        $total_h = $qr_h + $label_h + $padding * 2;
+        $qr_img   = imagecreatefrompng($tmp_file);
+        $qr_w     = imagesx($qr_img);
+        $qr_h     = imagesy($qr_img);
+        $banner_h = 48;
+        $footer_h = !empty($member_name) ? 40 : 0;
+        $padding  = 20;
+        $total_w  = $qr_w + $padding * 2;
+        $total_h  = $qr_h + $banner_h + $footer_h + $padding * 2;
         $canvas  = imagecreatetruecolor($total_w, $total_h);
         $dark_teal = imagecolorallocate($canvas, 0, 80, 80);
         $white     = imagecolorallocate($canvas, 255, 255, 255);
+        $dark_text = imagecolorallocate($canvas, 20, 20, 20);
         imagefill($canvas, 0, 0, $white);
-        imagefilledrectangle($canvas, 0, 0, $total_w, $label_h, $dark_teal);
+        imagefilledrectangle($canvas, 0, 0, $total_w, $banner_h, $dark_teal);
         $font_size  = 5;
         $max_chars  = (int)floor($total_w / imagefontwidth($font_size)) - 2;
         $label_text = strlen($gym_name) > $max_chars ? substr($gym_name, 0, $max_chars - 1) . '.' : $gym_name;
         $text_w     = strlen($label_text) * imagefontwidth($font_size);
         $text_x     = (int)(($total_w - $text_w) / 2);
-        $text_y     = (int)(($label_h - imagefontheight($font_size)) / 2);
+        $text_y     = (int)(($banner_h - imagefontheight($font_size)) / 2);
         imagestring($canvas, $font_size, $text_x, $text_y, $label_text, $white);
-        imagecopy($canvas, $qr_img, $padding, $label_h + $padding, 0, 0, $qr_w, $qr_h);
+        imagecopy($canvas, $qr_img, $padding, $banner_h + $padding, 0, 0, $qr_w, $qr_h);
         $logo_size = (int)($qr_w * 0.22);
         if (!empty($logo_path) && file_exists($logo_path)) {
             $ext = strtolower(pathinfo($logo_path, PATHINFO_EXTENSION));
@@ -384,11 +409,21 @@ if (isset($_POST['regenerate_qr'])) {
                 imagefill($lr, 0, 0, $tr);
                 imagecopyresampled($lr, $logo_src, 0, 0, 0, 0, $logo_size, $logo_size, imagesx($logo_src), imagesy($logo_src));
                 $lx = $padding + (int)(($qr_w - $logo_size) / 2);
-                $ly = $label_h + $padding + (int)(($qr_h - $logo_size) / 2);
+                $ly = $banner_h + $padding + (int)(($qr_h - $logo_size) / 2);
                 imagefilledellipse($canvas, $lx + (int)($logo_size/2), $ly + (int)($logo_size/2), $logo_size + 12, $logo_size + 12, $white);
                 imagecopy($canvas, $lr, $lx, $ly, 0, 0, $logo_size, $logo_size);
                 imagedestroy($lr); imagedestroy($logo_src);
             }
+        }
+        // Bottom footer: member name (uniform with the rest of the system)
+        if (!empty($member_name)) {
+            $footer_y   = $banner_h + $padding + $qr_h + $padding;
+            $name_label = strlen($member_name) > $max_chars ? substr($member_name, 0, $max_chars - 1) . '.' : $member_name;
+            $name_w     = strlen($name_label) * imagefontwidth($font_size);
+            $name_x     = (int)(($total_w - $name_w) / 2);
+            $name_y     = (int)($footer_y + ($footer_h - imagefontheight($font_size)) / 2);
+            imagestring($canvas, $font_size, $name_x + 1, $name_y, $name_label, $dark_text);
+            imagestring($canvas, $font_size, $name_x, $name_y, $name_label, $dark_text);
         }
         imagepng($canvas, $filepath);
         imagedestroy($canvas); imagedestroy($qr_img);
@@ -1702,19 +1737,6 @@ if (isset($_GET['edit'])) {
                                 justify-content: center;
                                 align-items: center;
                             }
-                            .header {
-                                margin-bottom: 30px;
-                            }
-                            .logo {
-                                width: 100px;
-                                height: auto;
-                                margin-bottom: 10px;
-                            }
-                            .gym-name {
-                                font-size: 24px;
-                                font-weight: bold;
-                                margin-bottom: 5px;
-                            }
                             .qr-container {
                                 border: 2px solid #000;
                                 padding: 20px;
@@ -1727,10 +1749,6 @@ if (isset($_GET['edit'])) {
                                 height: 300px;
                                 max-width: 100%;
                             }
-                            .member-info {
-                                font-size: 16px;
-                                margin: 15px 0;
-                            }
                             .instructions {
                                 font-size: 14px;
                                 color: #666;
@@ -1739,19 +1757,8 @@ if (isset($_GET['edit'])) {
                         </style>
                     </head>
                     <body>
-                        <div class="header">
-                            <img src="../gym logo.jpg" alt="Gym Logo" class="logo">
-                            <div class="gym-name">Gym Olympic Fitness</div>
-                            <div>Membership QR Code</div>
-                        </div>
-
                         <div class="qr-container">
                             <img src="../${imagePath}" alt="QR Code" class="qr-code">
-                        </div>
-
-                        <div class="member-info">
-                            <strong>Member Name:</strong> ${memberName}<br>
-                            <strong>Member Code:</strong> ${memberCode}
                         </div>
 
                         <div class="instructions">
@@ -1776,14 +1783,11 @@ if (isset($_GET['edit'])) {
                     <style>
                         body { font-family: Arial, sans-serif; text-align: center; padding: 30px; background: #fff; }
                         .wrapper { display: inline-block; border: 2px solid #006666; border-radius: 12px; padding: 24px 32px; }
-                        .gym-title { font-size: 11px; font-weight: bold; color: #006666; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-                        .member-label { font-size: 13px; color: #333; margin-top: 10px; font-weight: bold; }
-                        .scan-note { font-size: 10px; color: #888; margin-top: 6px; }
+                        .scan-note { font-size: 10px; color: #888; margin-top: 10px; }
                         img { max-width: 260px; display: block; margin: 0 auto; }
                     </style></head>
                     <body>
                         <div class='wrapper'>
-                            <div class='member-label'>${memberName}</div>
                             <img src='${imgSrc}'>
                             <div class='scan-note'>Scan to record attendance</div>
                         </div>
@@ -1827,11 +1831,9 @@ if (isset($_GET['edit'])) {
             printWindow.document.write('<!DOCTYPE html><html><head><title>QR - ' + memberName + '</title>'
                 + '<style>body{font-family:Arial,sans-serif;text-align:center;padding:30px;background:#fff;}'
                 + '.wrapper{display:inline-block;border:2px solid #005050;border-radius:12px;padding:24px 32px;}'
-                + '.lbl{font-size:14px;color:#222;margin-top:10px;font-weight:bold;}'
-                + '.note{font-size:11px;color:#888;margin-top:6px;}'
+                + '.note{font-size:11px;color:#888;margin-top:10px;}'
                 + 'img{max-width:260px;display:block;margin:0 auto;}</style></head>'
                 + '<body><div class="wrapper">'
-                + '<div class="lbl">' + memberName + '</div>'
                 + '<img src="' + imgSrc + '">'
                 + '<div class="note">Scan to record attendance</div>'
                 + '</div></body></html>');
@@ -2061,25 +2063,7 @@ if (isset($_GET['edit'])) {
                 document.getElementById('renewSubmitBtn').disabled = true;
             }
         }
-
-        // Sidebar toggle functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.flex-grow-1');
-
-            sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('sidebar-collapsed');
-                mainContent.classList.toggle('main-expanded');
-
-                // Update toggle icon
-                const icon = sidebarToggle.querySelector('i');
-                if (sidebar.classList.contains('sidebar-collapsed')) {
-                    icon.className = 'fas fa-times'; // Close icon when collapsed
-                } else {
-                    icon.className = 'fas fa-bars'; // Bars icon when expanded
-                }
-            });
-        });
     </script>
+    <script src="../assets/sidebar.js"></script>
 </body>
 </html>

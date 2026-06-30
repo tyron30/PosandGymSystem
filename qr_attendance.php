@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 include "config/db.php";
 
 $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -36,7 +36,9 @@ if ($result->num_rows === 0) {
         $response = ['error' => 'Membership expired. Please renew to continue.'];
     } else {
         $check_stmt = $conn->prepare(
-            "SELECT id, checkin_time, checkout_time FROM attendance
+            "SELECT id, checkin_time, checkout_time,
+                    TIMESTAMPDIFF(SECOND, checkin_time, NOW()) AS elapsed_secs
+             FROM attendance
              WHERE member_id = ? AND DATE(checkin_time) = CURDATE()
              ORDER BY checkin_time DESC LIMIT 1"
         );
@@ -64,10 +66,8 @@ if ($result->num_rows === 0) {
             if ($record['checkout_time'] !== null) {
                 $response = ['error' => 'You have already checked in and checked out today.'];
             } else {
-                // Validate minimum time before checkout
-                $checkin_ts   = strtotime($record['checkin_time']);
-                $now_ts       = time();
-                $elapsed_secs = $now_ts - $checkin_ts;
+                // Use MySQL-computed elapsed seconds to avoid PHP/MySQL timezone mismatch
+                $elapsed_secs = (int)$record['elapsed_secs'];
                 $min_secs     = MIN_CHECKIN_MINUTES * 60;
 
                 if ($elapsed_secs < $min_secs) {

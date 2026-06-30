@@ -358,26 +358,6 @@ $annual_attendance = $conn->query("SELECT COUNT(*) as count FROM attendance WHER
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Sidebar toggle functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.flex-grow-1');
-
-            sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('sidebar-collapsed');
-                mainContent.classList.toggle('main-expanded');
-
-                // Update toggle icon
-                const icon = sidebarToggle.querySelector('i');
-                if (sidebar.classList.contains('sidebar-collapsed')) {
-                    icon.className = 'fas fa-times'; // Close icon when collapsed
-                } else {
-                    icon.className = 'fas fa-bars'; // Bars icon when expanded
-                }
-            });
-        });
-    </script>
+    <script src="../assets/sidebar.js"></script>
 </body>
 </html>

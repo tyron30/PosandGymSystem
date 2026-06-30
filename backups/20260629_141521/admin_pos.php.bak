@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 include "../config/db.php";
 
 if (!isset($_SESSION['user'])) {
@@ -78,54 +78,11 @@ if (isset($_POST['add_product'])) {
     header('Content-Type: application/json');
 
     $name = trim($_POST['name']);
-    $category = strtolower(trim($_POST['category']));
+    $category = $_POST['category'];
     $price = floatval($_POST['price']);
     $stock_quantity = intval($_POST['stock_quantity']);
 
     $errors = [];
-
-    // Handle product image upload (optional)
-    $image_path = null;
-    if (isset($_FILES['product_image']) && !empty($_FILES['product_image']['name']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = __DIR__ . '/../uploads/products/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-            chmod($upload_dir, 0777);
-        }
-
-        $ext = strtolower(pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION));
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        if (!in_array($ext, $allowed)) {
-            $errors[] = "Invalid image format. Use JPG, PNG, GIF, or WEBP.";
-        } elseif ($_FILES['product_image']['size'] > 2 * 1024 * 1024) {
-            $errors[] = "Image must be under 2MB.";
-        } else {
-            // Create temp id later, use time+random to avoid collisions
-            $new_filename = 'product_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-            $dest = $upload_dir . $new_filename;
-            $moved = move_uploaded_file($_FILES['product_image']['tmp_name'], $dest);
-            if (!$moved) {
-                $moved = copy($_FILES['product_image']['tmp_name'], $dest);
-            }
-            if ($moved && file_exists($dest)) {
-                $image_path = 'uploads/products/' . $new_filename;
-            } else {
-                $errors[] = "Failed to save image. Dir writable: " . (is_writable($upload_dir) ? 'yes' : 'no');
-            }
-        }
-    } elseif (isset($_FILES['product_image']) && !empty($_FILES['product_image']['name']) && $_FILES['product_image']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $php_upload_errors = [
-            UPLOAD_ERR_INI_SIZE   => 'File too large (php.ini limit)',
-            UPLOAD_ERR_FORM_SIZE  => 'File too large (form limit)',
-            UPLOAD_ERR_PARTIAL    => 'File only partially uploaded',
-            UPLOAD_ERR_NO_TMP_DIR => 'No temp folder - check PHP upload_tmp_dir in php.ini',
-            UPLOAD_ERR_CANT_WRITE => 'Cannot write to disk - check folder permissions',
-            UPLOAD_ERR_EXTENSION  => 'Upload blocked by PHP extension',
-        ];
-        $err_code = $_FILES['product_image']['error'];
-        $errors[] = $php_upload_errors[$err_code] ?? "Upload error code: $err_code";
-    }
-
 
     if (empty($name)) {
         $errors[] = "Product name is required.";
@@ -144,9 +101,8 @@ if (isset($_POST['add_product'])) {
     }
 
     if (empty($errors)) {
-        $stmt = $conn->prepare("INSERT INTO pos_items (name, category, price, stock_quantity, image) VALUES (?, ?, ?, ?, ?)");
-        $img_val = $image_path ?? null;
-        $stmt->bind_param("ssdis", $name, $category, $price, $stock_quantity, $img_val);
+        $stmt = $conn->prepare("INSERT INTO pos_items (name, category, price, stock_quantity) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssdi", $name, $category, $price, $stock_quantity);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Product added successfully']);
@@ -166,7 +122,7 @@ if (isset($_POST['edit_product'])) {
 
     $id = intval($_POST['id']);
     $name = trim($_POST['name']);
-    $category = strtolower(trim($_POST['category']));
+    $category = $_POST['category'];
     $price = floatval($_POST['price']);
     $stock_quantity = intval($_POST['stock_quantity']);
 
@@ -188,68 +144,9 @@ if (isset($_POST['edit_product'])) {
         $errors[] = "Stock quantity cannot be negative.";
     }
 
-    // Handle product image upload
-    $image_path = null;
-    if (!empty($_FILES['product_image']['name']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = __DIR__ . '/../uploads/products/';
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-            chmod($upload_dir, 0777);
-        }
-        $ext = strtolower(pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION));
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        if (!in_array($ext, $allowed)) {
-            $errors[] = "Invalid image format. Use JPG, PNG, GIF, or WEBP.";
-        } elseif ($_FILES['product_image']['size'] > 2 * 1024 * 1024) {
-            $errors[] = "Image must be under 2MB.";
-        } else {
-            $new_filename = 'product_' . $id . '_' . time() . '.' . $ext;
-            $dest = $upload_dir . $new_filename;
-            $moved = move_uploaded_file($_FILES['product_image']['tmp_name'], $dest);
-            if (!$moved) {
-                $moved = copy($_FILES['product_image']['tmp_name'], $dest);
-            }
-            if ($moved && file_exists($dest)) {
-                $image_path = 'uploads/products/' . $new_filename;
-            } else {
-                $errors[] = "Failed to save image. Dir writable: " . (is_writable($upload_dir) ? 'yes' : 'no');
-            }
-        }
-    } elseif (!empty($_FILES['product_image']['name']) && $_FILES['product_image']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $php_upload_errors = [
-            UPLOAD_ERR_INI_SIZE   => 'File too large (php.ini limit)',
-            UPLOAD_ERR_FORM_SIZE  => 'File too large (form limit)',
-            UPLOAD_ERR_PARTIAL    => 'File only partially uploaded',
-            UPLOAD_ERR_NO_TMP_DIR => 'No temp folder - check PHP upload_tmp_dir in php.ini',
-            UPLOAD_ERR_CANT_WRITE => 'Cannot write to disk - check folder permissions',
-            UPLOAD_ERR_EXTENSION  => 'Upload blocked by PHP extension',
-        ];
-        $err_code = $_FILES['product_image']['error'];
-        $errors[] = $php_upload_errors[$err_code] ?? "Upload error code: $err_code";
-    }
-
-    // Determine final image value:
-    // remove_image=1  → explicitly set NULL (user clicked Remove Image)
-    // new file upload  → use new path (handled above, $image_path already set)
-    // otherwise        → preserve existing path from current_image
-    $remove_image = isset($_POST['remove_image']) && $_POST['remove_image'] === '1';
-    if (!$remove_image && $image_path === null && isset($_POST['current_image']) && $_POST['current_image'] !== '' && $_POST['current_image'] !== '0') {
-        $image_path = $_POST['current_image'];
-    }
-
     if (empty($errors)) {
-        if ($remove_image) {
-            // Explicitly clear the image column
-            $null_val = null;
-            $stmt = $conn->prepare("UPDATE pos_items SET name = ?, category = ?, price = ?, stock_quantity = ?, image = ? WHERE id = ?");
-            $stmt->bind_param("ssdisi", $name, $category, $price, $stock_quantity, $null_val, $id);
-        } elseif ($image_path !== null) {
-            $stmt = $conn->prepare("UPDATE pos_items SET name = ?, category = ?, price = ?, stock_quantity = ?, image = ? WHERE id = ?");
-            $stmt->bind_param("ssdisi", $name, $category, $price, $stock_quantity, $image_path, $id);
-        } else {
-            $stmt = $conn->prepare("UPDATE pos_items SET name = ?, category = ?, price = ?, stock_quantity = ? WHERE id = ?");
-            $stmt->bind_param("ssdii", $name, $category, $price, $stock_quantity, $id);
-        }
+        $stmt = $conn->prepare("UPDATE pos_items SET name = ?, category = ?, price = ?, stock_quantity = ? WHERE id = ?");
+        $stmt->bind_param("ssdii", $name, $category, $price, $stock_quantity, $id);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Product updated successfully']);
@@ -260,28 +157,6 @@ if (isset($_POST['edit_product'])) {
     } else {
         echo json_encode(['success' => false, 'message' => implode(' ', $errors)]);
     }
-    exit();
-}
-
-// Handle delete product
-if (isset($_POST['delete_product'])) {
-    header('Content-Type: application/json');
-
-    $id = intval($_POST['id']);
-    if ($id <= 0) {
-        echo json_encode(['success' => false, 'message' => 'Invalid product ID.']);
-        exit();
-    }
-
-    // Soft-delete: set is_active = 0 so sales history stays intact
-    $stmt = $conn->prepare("UPDATE pos_items SET is_active = 0 WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Product deleted successfully.']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Error deleting product: ' . $stmt->error]);
-    }
-    $stmt->close();
     exit();
 }
 
@@ -383,10 +258,6 @@ if (isset($_POST['process_sale'])) {
 }
 
 // Fetch POS items
-// Ensure upload directory exists
-$upload_dir_check = __DIR__ . '/../uploads/products/';
-if (!is_dir($upload_dir_check)) mkdir($upload_dir_check, 0755, true);
-
 $pos_items = $conn->query("SELECT * FROM pos_items WHERE is_active = 1 ORDER BY category, name");
 
 // Fetch today's sales and total
@@ -438,39 +309,6 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
         .pos-item.selected {
             border-color: #28a745;
             background-color: #f8fff9;
-        }
-        .product-actions {
-            flex-wrap: nowrap;
-        }
-        .product-action-btn {
-            flex: 1 1 auto;
-            min-width: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            padding: 4px 6px;
-            font-size: .72rem;
-        }
-        .product-action-btn-icon {
-            flex: 0 0 32px;
-            padding: 4px 0;
-        }
-        /* Dedicated class for the confirm modal's footer buttons.
-           (Bootstrap's own .flex-grow-1 utility is hijacked elsewhere on this
-           page for sidebar layout, so it can't be reused here.) */
-        .confirm-modal-btn {
-            flex: 1 1 0%;
-        }
-        /* Edit Product modal: column next to the image preview holding the
-           file input + Remove Image button. Same reasoning as above —
-           Bootstrap's .flex-grow-1 is hijacked on this page, so don't use it. */
-        .edit-image-fields {
-            flex: 1 1 auto;
-            min-width: 0;
         }
         .cart-item {
             background: #f8f9fa;
@@ -665,28 +503,17 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
                                 <div class="row" id="productsGrid">
                                     <?php while ($item = $pos_items->fetch_assoc()): ?>
                                     <div class="col-md-3 mb-3">
-                                        <div class="card pos-item h-100" style="cursor:pointer;transition:transform .15s,box-shadow .15s;" data-item-id="<?php echo $item['id']; ?>" data-item-name="<?php echo htmlspecialchars($item['name']); ?>" data-item-price="<?php echo $item['price']; ?>" data-stock="<?php echo $item['stock_quantity']; ?>">
-                                            <?php if (!empty($item['image']) && $item['image'] !== '0'): ?>
-                                            <img src="../<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['name']); ?>" class="card-img-top" style="height:110px;object-fit:cover;border-radius:8px 8px 0 0;">
-                                            <?php else: ?>
-                                            <div class="d-flex align-items-center justify-content-center bg-light" style="height:110px;border-radius:8px 8px 0 0;">
-                                                <i class="fas fa-box text-muted" style="font-size:2.5rem;"></i>
-                                            </div>
-                                            <?php endif; ?>
-                                            <div class="card-body text-center p-2">
-                                                <h6 class="card-title mb-1 fw-bold" style="font-size:.85rem;line-height:1.2;"><?php echo htmlspecialchars($item['name']); ?></h6>
-                                                <p class="card-text text-primary fw-bold mb-1" style="font-size:.95rem;">₱<?php echo number_format($item['price'], 2); ?></p>
-                                                <small class="text-muted d-block mb-1">Stock: <?php echo $item['stock_quantity']; ?></small>
-                                                <span class="badge bg-secondary mb-2" style="font-size:.7rem;"><?php echo ucfirst($item['category']); ?></span>
-                                                <div>
-                                                    <div class="d-flex gap-1 product-actions">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary edit-product-btn product-action-btn" data-item-id="<?php echo $item['id']; ?>" data-item-name="<?php echo htmlspecialchars($item['name']); ?>" data-item-price="<?php echo $item['price']; ?>" data-item-category="<?php echo $item['category']; ?>" data-item-stock="<?php echo $item['stock_quantity']; ?>" data-item-image="<?php echo htmlspecialchars($item['image'] ?? ''); ?>">
-                                                        <i class="fas fa-edit"></i><span>Edit</span>
+                                        <div class="card pos-item" data-item-id="<?php echo $item['id']; ?>" data-item-name="<?php echo htmlspecialchars($item['name']); ?>" data-item-price="<?php echo $item['price']; ?>" data-stock="<?php echo $item['stock_quantity']; ?>">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-title"><?php echo htmlspecialchars($item['name']); ?></h6>
+                                                <p class="card-text text-primary fw-bold">₱<?php echo number_format($item['price'], 2); ?></p>
+                                                <small class="text-muted">Stock: <?php echo $item['stock_quantity']; ?></small>
+                                                <br>
+                                                <span class="badge bg-secondary"><?php echo ucfirst($item['category']); ?></span>
+                                                <div class="mt-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary edit-product-btn" data-item-id="<?php echo $item['id']; ?>" data-item-name="<?php echo htmlspecialchars($item['name']); ?>" data-item-price="<?php echo $item['price']; ?>" data-item-category="<?php echo $item['category']; ?>" data-item-stock="<?php echo $item['stock_quantity']; ?>">
+                                                        <i class="fas fa-edit"></i> Edit
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger delete-product-btn product-action-btn product-action-btn-icon" data-item-id="<?php echo $item['id']; ?>" data-item-name="<?php echo htmlspecialchars($item['name']); ?>" title="Delete product">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -798,7 +625,7 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
                     <h5 class="modal-title" id="addProductModalLabel">Add New Product</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="addProductForm" enctype="multipart/form-data">
+                <form id="addProductForm">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="productName" class="form-label">Product Name</label>
@@ -818,15 +645,9 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
                             <input type="number" class="form-control" id="productPrice" step="0.01" min="0" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Product Image / Logo</label>
-                            <input type="file" class="form-control" id="productImage" accept="image/jpeg,image/png,image/gif,image/webp">
-                            <div class="form-text">JPG, PNG, GIF or WEBP &bull; Max 2MB</div>
-                        </div>
-                        <div class="mb-3">
                             <label for="productStock" class="form-label">Initial Stock</label>
                             <input type="number" class="form-control" id="productStock" min="0" required>
                         </div>
-
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -842,29 +663,12 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editProductModalLabel"><i class="fas fa-edit me-2"></i>Edit Product</h5>
+                    <h5 class="modal-title" id="editProductModalLabel">Edit Product</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="editProductForm">
                     <input type="hidden" id="editProductId">
                     <div class="modal-body">
-                        <!-- Product Image Upload -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Product Image / Logo</label>
-                            <div class="d-flex align-items-start gap-3">
-                                <div id="editProductImagePreview" style="width:90px;height:90px;border:2px dashed #dee2e6;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f8f9fa;flex-shrink:0;">
-                                    <i class="fas fa-image text-muted" style="font-size:2rem;"></i>
-                                </div>
-                                <div class="edit-image-fields">
-                                    <input type="file" class="form-control" id="editProductImage" accept="image/jpeg,image/png,image/gif,image/webp" style="font-size:.85rem;">
-                                    <div class="form-text">JPG, PNG, GIF or WEBP &bull; Max 2MB</div>
-                                    <button type="button" class="btn btn-sm btn-outline-danger mt-1" id="clearProductImage" style="display:none;">
-                                        <i class="fas fa-trash-alt me-1"></i>Remove Image
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <hr class="my-2">
                         <div class="mb-3">
                             <label for="editProductName" class="form-label">Product Name</label>
                             <input type="text" class="form-control" id="editProductName" required>
@@ -889,28 +693,9 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Update Product</button>
+                        <button type="submit" class="btn btn-primary">Update Product</button>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Reusable Confirm Action Modal (Delete Product / Remove Image) -->
-    <div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
-            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
-                <div class="modal-body text-center p-4 pt-5">
-                    <div id="confirmActionIcon" class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:64px;height:64px;background:#fdecea;">
-                        <i class="fas fa-trash-alt" style="font-size:1.6rem;color:#dc3545;"></i>
-                    </div>
-                    <h5 id="confirmActionTitle" class="fw-bold mb-2">Delete Product?</h5>
-                    <p id="confirmActionMessage" class="text-muted mb-4" style="font-size:.9rem;">This action cannot be undone.</p>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-light confirm-modal-btn" style="border-radius:10px;" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" id="confirmActionBtn" class="btn btn-danger confirm-modal-btn" style="border-radius:10px;">Delete</button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -920,34 +705,6 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
     <script>
         let cart = [];
         let cartTotal = 0;
-
-        // Reusable confirm-action modal (replaces native confirm() for delete/remove actions)
-        function showConfirmModal(opts) {
-            const titleEl   = document.getElementById('confirmActionTitle');
-            const msgEl     = document.getElementById('confirmActionMessage');
-            const iconWrap  = document.getElementById('confirmActionIcon');
-            const oldBtn    = document.getElementById('confirmActionBtn');
-
-            titleEl.textContent = opts.title || 'Are you sure?';
-            msgEl.textContent   = opts.message || 'This action cannot be undone.';
-            iconWrap.style.background = opts.iconBg || '#fdecea';
-            iconWrap.innerHTML = `<i class="fas ${opts.icon || 'fa-trash-alt'}" style="font-size:1.6rem;color:${opts.iconColor || '#dc3545'};"></i>`;
-
-            // Clone the confirm button to wipe any previously-attached listeners
-            const newBtn = oldBtn.cloneNode(true);
-            newBtn.textContent = opts.confirmLabel || 'Confirm';
-            newBtn.className = 'btn confirm-modal-btn ' + (opts.confirmClass || 'btn-danger');
-            newBtn.style.borderRadius = '10px';
-            oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-
-            const modalEl = document.getElementById('confirmActionModal');
-            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            newBtn.addEventListener('click', function() {
-                modal.hide();
-                if (typeof opts.onConfirm === 'function') opts.onConfirm();
-            });
-            modal.show();
-        }
 
         // Initialize cart from localStorage if exists
         document.addEventListener('DOMContentLoaded', function() {
@@ -1232,123 +989,16 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
             const productPrice = btn.dataset.itemPrice;
             const productCategory = btn.dataset.itemCategory;
             const productStock = btn.dataset.itemStock;
-            const productImage = btn.dataset.itemImage || '';
 
             document.getElementById('editProductId').value = productId;
             document.getElementById('editProductName').value = productName;
             document.getElementById('editProductPrice').value = productPrice;
             document.getElementById('editProductCategory').value = productCategory;
             document.getElementById('editProductStock').value = productStock;
-            document.getElementById('editProductImage').value = '';
-
-            // Show existing image preview
-            const preview = document.getElementById('editProductImagePreview');
-            const clearBtn = document.getElementById('clearProductImage');
-            preview.dataset.removeImage = '0'; // always reset removal flag on open
-            if (productImage && productImage !== '0') {
-                preview.innerHTML = `<img src="../${productImage}" style="width:100%;height:100%;object-fit:cover;">`;
-                clearBtn.style.display = 'inline-block';
-                preview.dataset.currentImage = productImage;
-            } else {
-                preview.innerHTML = '<i class="fas fa-image text-muted" style="font-size:2rem;"></i>';
-                clearBtn.style.display = 'none';
-                preview.dataset.currentImage = '';
-            }
 
             const modal = new bootstrap.Modal(document.getElementById('editProductModal'));
             modal.show();
         }
-
-        // Image file change handler
-        document.getElementById('editProductImage').addEventListener('change', function() {
-            const file = this.files[0];
-            const preview = document.getElementById('editProductImagePreview');
-            const clearBtn = document.getElementById('clearProductImage');
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
-                };
-                reader.readAsDataURL(file);
-                clearBtn.style.display = 'inline-block';
-            }
-        });
-
-        document.getElementById('editProductImage').addEventListener('change', function() {
-            const file = this.files[0];
-            const preview = document.getElementById('editProductImagePreview');
-            const clearBtn = document.getElementById('clearProductImage');
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
-                };
-                reader.readAsDataURL(file);
-                clearBtn.style.display = 'inline-block';
-                preview.dataset.removeImage = '0'; // new file chosen — cancel any pending removal
-            }
-        });
-
-        // Clear image button — confirms, then marks image for removal on save
-        document.getElementById('clearProductImage').addEventListener('click', function() {
-            const clearBtn = this;
-            showConfirmModal({
-                title: 'Remove Image?',
-                message: 'This will remove the current product image. You can upload a new one anytime.',
-                confirmLabel: 'Remove',
-                confirmClass: 'btn-danger',
-                icon: 'fa-image',
-                iconBg: '#fdecea',
-                iconColor: '#dc3545',
-                onConfirm: function() {
-                    document.getElementById('editProductImage').value = '';
-                    const preview = document.getElementById('editProductImagePreview');
-                    preview.innerHTML = '<i class="fas fa-image text-muted" style="font-size:2rem;"></i>';
-                    preview.dataset.currentImage = '';
-                    preview.dataset.removeImage = '1'; // tell PHP to NULL the image column
-                    clearBtn.style.display = 'none';
-                }
-            });
-        });
-
-        // Delete product handler
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.delete-product-btn')) {
-                e.stopPropagation();
-                const btn  = e.target.closest('.delete-product-btn');
-                const id   = btn.dataset.itemId;
-                const name = btn.dataset.itemName;
-
-                showConfirmModal({
-                    title: 'Delete Product?',
-                    message: `Delete "${name}"? This will hide it from the POS. Sales history will be kept.`,
-                    confirmLabel: 'Delete',
-                    confirmClass: 'btn-danger',
-                    icon: 'fa-trash-alt',
-                    iconBg: '#fdecea',
-                    iconColor: '#dc3545',
-                    onConfirm: function() {
-                        const fd = new FormData();
-                        fd.append('delete_product', '1');
-                        fd.append('id', id);
-
-                        fetch('pos.php', { method: 'POST', body: fd })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.success) {
-                                showToast(data.message, 'success');
-                                // Remove the card from the grid immediately without reload
-                                const card = btn.closest('.col-md-3');
-                                if (card) card.remove();
-                            } else {
-                                showToast(data.message, 'danger');
-                            }
-                        })
-                        .catch(() => showToast('Error deleting product.', 'danger'));
-                    }
-                });
-            }
-        });
 
         // Handle add product form submission
         document.getElementById('addProductForm').addEventListener('submit', function(e) {
@@ -1361,14 +1011,7 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
             formData.append('price', document.getElementById('productPrice').value);
             formData.append('stock_quantity', document.getElementById('productStock').value);
 
-            // Append image file if selected
-            const productImageFile = document.getElementById('productImage')?.files?.[0];
-            if (productImageFile) {
-                formData.append('product_image', productImageFile);
-            }
-
             fetch('pos.php', {
-
                 method: 'POST',
                 body: formData
             })
@@ -1411,19 +1054,6 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
             formData.append('price', document.getElementById('editProductPrice').value);
             formData.append('stock_quantity', document.getElementById('editProductStock').value);
 
-            // Send current image path so PHP can preserve it if no new file chosen
-            const preview    = document.getElementById('editProductImagePreview');
-            const currentImg = preview.dataset.currentImage || '';
-            const removeImg  = preview.dataset.removeImage  || '0';
-            formData.append('current_image', currentImg);
-            formData.append('remove_image',  removeImg);
-
-            // Append image file if selected
-            const imageFile = document.getElementById('editProductImage').files[0];
-            if (imageFile) {
-                formData.append('product_image', imageFile);
-            }
-
             fetch('pos.php', {
                 method: 'POST',
                 body: formData
@@ -1453,7 +1083,24 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
         });
 
         // Sidebar toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.flex-grow-1');
+
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('sidebar-collapsed');
+                mainContent.classList.toggle('main-expanded');
+
+                // Update toggle icon
+                const icon = sidebarToggle.querySelector('i');
+                if (sidebar.classList.contains('sidebar-collapsed')) {
+                    icon.className = 'fas fa-times'; // Close icon when collapsed
+                } else {
+                    icon.className = 'fas fa-bars'; // Bars icon when expanded
+                }
+            });
+        });
     </script>
-    <script src="../assets/sidebar.js"></script>
 </body>
 </html>

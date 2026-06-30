@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 include "../config/db.php";
 
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'cashier') {
@@ -64,6 +64,7 @@ $members = $conn->query("SELECT id, fullname FROM members WHERE status = 'ACTIVE
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="../assets/style.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
     <div class="d-flex">
@@ -139,6 +140,9 @@ $members = $conn->query("SELECT id, fullname FROM members WHERE status = 'ACTIVE
                     <div>
                         <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#checkinModal">
                             <i class="fas fa-sign-in-alt me-1"></i>Check In Member
+                        </button>
+                        <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+                            <i class="fas fa-qrcode me-1"></i>Scan QR Code
                         </button>
                         <a href="../qr_scanner_bg.php" target="_blank" class="btn btn-dark border border-success">
                             <i class="fas fa-video me-1 text-success"></i>
@@ -251,8 +255,34 @@ $members = $conn->query("SELECT id, fullname FROM members WHERE status = 'ACTIVE
                 </form>
             </div>
         </div>
-    </div>    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/sidebar.js"></script>
+    </div>
+
+    <!-- QR Scanner Modal -->
+    <div class="modal fade" id="qrScannerModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">QR Code Scanner</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <div id="qr-reader" style="width: 100%; height: 400px;"></div>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-muted">Position the QR code within the camera view to scan and check in the member.</p>
+                    </div>
+                    <div id="qrResult" class="alert" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/sidebar.js"></script>
     <script>
         // ── Audio feedback ──────────────────────────────────────────────
         const _AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -274,6 +304,164 @@ $members = $conn->query("SELECT id, fullname FROM members WHERE status = 'ACTIVE
             warning()  { _tone(440,.15,'square',.3,0); _tone(440,.15,'square',.3,.22); _tone(440,.15,'square',.3,.44); }
         };
         document.addEventListener('click', ()=>{ if(_audioCtx) _audioCtx.resume(); }, {once:true});
+
+        // QR Scanner functionality
+        let html5QrcodeScanner = null;
+
+        document.getElementById('qrScannerModal').addEventListener('shown.bs.modal', function () {
+            const resultDiv = document.getElementById('qrResult');
+
+            console.log('html5-qrcode library loaded');
+            console.log('Scanner modal opened');
+
+            if (typeof Html5QrcodeScanner === 'undefined') {
+                resultDiv.className = 'alert alert-danger';
+                resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>QR scanner library not loaded. Please refresh the page.';
+                resultDiv.style.display = 'block';
+                return;
+            }
+
+            // Clear any existing scanner
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().catch(error => {
+                    console.error('Failed to clear existing scanner:', error);
+                });
+            }
+
+            // Create new scanner
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "qr-reader", {
+                    fps: 10,
+                    qrbox: {width: 250, height: 250},
+                    aspectRatio: 1.0,
+                    showTorchButtonIfSupported: false,
+                    showZoomSliderIfSupported: false,
+                    defaultZoomValueIfSupported: 2,
+                });
+
+            html5QrcodeScanner.render(function (decodedText, decodedResult) {
+                console.log('QR code scanned:', decodedText);
+
+                // Stop scanning
+                html5QrcodeScanner.clear().catch(error => {
+                    console.error('Failed to clear scanner:', error);
+                });
+
+                // Process the QR code content (token)
+                fetch('../qr_attendance.php?token=' + encodeURIComponent(decodedText), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Response data:', data);
+                        if (data.success) {
+                            _getACtx().resume();
+                            if (data.type === 'checkout') {
+                                _sounds.checkout();
+                                resultDiv.className = 'alert alert-warning';
+                                resultDiv.innerHTML = '<i class="fas fa-sign-out-alt me-2"></i>' + data.success;
+                            } else {
+                                _sounds.checkin();
+                                resultDiv.className = 'alert alert-success';
+                                let msg = '<i class="fas fa-sign-in-alt me-2"></i>' + data.success;
+                                if (data.info) msg += '<div class="mt-1 small"><i class="fas fa-clock me-1"></i>' + data.info + '</div>';
+                                resultDiv.innerHTML = msg;
+                            }
+                            resultDiv.style.display = 'block';
+
+                            // Reload the page after 2 seconds to show updated attendance
+                            setTimeout(function() {
+                                location.reload();
+                            }, 2000);
+                        } else if (data.type === 'too_soon') {
+                            _sounds.warning();
+                            resultDiv.className = 'alert alert-warning';
+                            resultDiv.innerHTML = '<i class="fas fa-clock me-2"></i>' + data.error;
+                            resultDiv.style.display = 'block';
+                            setTimeout(function() {
+                                resultDiv.style.display = 'none';
+                                startScanner();
+                            }, 4000);
+                        } else {
+                            _sounds.error();
+                            resultDiv.className = 'alert alert-danger';
+                            resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>' + data.error;
+                            resultDiv.style.display = 'block';
+                            setTimeout(function() { startScanner(); }, 3000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        resultDiv.className = 'alert alert-danger';
+                        resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Failed to process QR code. Please try again.';
+                        resultDiv.style.display = 'block';
+
+                        // Restart scanner after showing error
+                        setTimeout(function() {
+                            startScanner();
+                        }, 3000);
+                    });
+            }, function (errorMessage) {
+                // Ignore scan errors, only handle successful scans
+                console.log('Scan error:', errorMessage);
+            });
+        });
+
+        function startScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.render(function (decodedText, decodedResult) {
+                    console.log('QR code scanned:', decodedText);
+
+                    // Stop scanning
+                    html5QrcodeScanner.clear().catch(error => {
+                        console.error('Failed to clear scanner:', error);
+                    });
+
+                    // Process the QR code content (token)
+                    fetch('../qr_attendance.php?token=' + encodeURIComponent(decodedText), {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            const resultDiv = document.getElementById('qrResult');
+                            console.log('Response data:', data);
+                            if (data.success) {
+                                resultDiv.className = 'alert alert-success';
+                                resultDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + data.success;
+                                resultDiv.style.display = 'block';
+                                setTimeout(() => location.reload(), 2000);
+                            } else {
+                                resultDiv.className = 'alert alert-danger';
+                                resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>' + data.error;
+                                resultDiv.style.display = 'block';
+                                setTimeout(() => startScanner(), 3000);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Fetch error:', error);
+                            const resultDiv = document.getElementById('qrResult');
+                            resultDiv.className = 'alert alert-danger';
+                            resultDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Failed to process QR code. Please try again.';
+                            resultDiv.style.display = 'block';
+                            setTimeout(() => startScanner(), 3000);
+                        });
+                }, function (errorMessage) {
+                    console.log('Scan error:', errorMessage);
+                });
+            }
+        }
+
+        document.getElementById('qrScannerModal').addEventListener('hidden.bs.modal', function () {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().catch(error => {
+                    console.error('Failed to clear scanner on modal close:', error);
+                });
+            }
+        });
     </script>
 </body>
 </html>

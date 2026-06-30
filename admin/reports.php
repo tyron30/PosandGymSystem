@@ -217,33 +217,6 @@ $low_stock_items = $conn->query("SELECT COUNT(*) as count FROM pos_items WHERE s
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.flex-grow-1');
-
-            function isMobile() {
-                return window.innerWidth <= 768;
-            }
-
-            sidebarToggle.addEventListener('click', function() {
-                if (isMobile()) {
-                    sidebar.classList.toggle('sidebar-open');
-                } else {
-                    sidebar.classList.toggle('sidebar-collapsed');
-                    mainContent.classList.toggle('main-expanded');
-                }
-                // Update toggle icon
-                const icon = sidebarToggle.querySelector('i');
-                const isOpen = isMobile() ? sidebar.classList.contains('sidebar-open') : !sidebar.classList.contains('sidebar-collapsed');
-                if (isOpen) {
-                    icon.className = 'fas fa-times'; // Close icon when open
-                } else {
-                    icon.className = 'fas fa-bars'; // Bars icon when closed
-                }
-            });
-        });
-    </script>
+    <script src="../assets/sidebar.js"></script>
 </body>
 </html>
