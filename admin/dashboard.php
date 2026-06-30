@@ -60,7 +60,7 @@ $low_stock_items = $conn->query("SELECT * FROM pos_items WHERE stock_quantity <=
     <title>Admin Dashboard - Gym Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="../assets/style.css" rel="stylesheet">
+    <link href="../assets/style.css?v=20260630d" rel="stylesheet">
     <script src="../assets/toast.js"></script>
     <style>
         .sidebar-nav .nav-link {
@@ -91,47 +91,47 @@ $low_stock_items = $conn->query("SELECT * FROM pos_items WHERE stock_quantity <=
                 <ul class="nav flex-column">
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?> active" href="dashboard.php">
-                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            <i class="fas fa-tachometer-alt me-2"></i><span>Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="members.php">
-                            <i class="fas fa-users me-2"></i>Members
+                            <i class="fas fa-users me-2"></i><span>Members</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="pos.php">
-                            <i class="fas fa-cash-register me-2"></i>Point of Sale
+                            <i class="fas fa-cash-register me-2"></i><span>Point of Sale</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="attendance.php">
-                            <i class="fas fa-calendar-check me-2"></i>Attendance
+                            <i class="fas fa-calendar-check me-2"></i><span>Attendance</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="reports.php">
-                            <i class="fas fa-chart-bar me-2"></i>Reports
+                            <i class="fas fa-chart-bar me-2"></i><span>Reports</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="employees.php">
-                            <i class="fas fa-user-tie me-2"></i>Employees
+                            <i class="fas fa-user-tie me-2"></i><span>Employees</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="settings.php">
-                            <i class="fas fa-cog me-2"></i>Settings
+                            <i class="fas fa-cog me-2"></i><span>Settings</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../change_password.php">
-                            <i class="fas fa-key me-2"></i>Change Password
+                            <i class="fas fa-key me-2"></i><span>Change Password</span>
                         </a>
                     </li>
                     <li class="nav-item mt-4">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../logout.php">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            <i class="fas fa-sign-out-alt me-2"></i><span>Logout</span>
                         </a>
                     </li>
                 </ul>

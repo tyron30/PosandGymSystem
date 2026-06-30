@@ -323,7 +323,11 @@ h1, h2, h3, h4, h5, h6 {
     height: 100vh;
     width: 250px !important;
     transition: width 0.3s ease, transform 0.3s ease;
-    z-index: 100;
+    /* Must sit above #sidebarBackdrop (z-index: 999) or the backdrop
+       intercepts clicks on the nav links when the sidebar is open on
+       mobile/tablet. */
+    z-index: 1000;
+    pointer-events: auto;
 }
 
 #sidebar.sidebar-collapsed {
@@ -353,7 +357,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #sidebar.sidebar-collapsed .nav-link i {
-    margin-right: 0;
+    margin-right: 0 !important;
     font-size: 1.2rem;
 }
 
@@ -370,26 +374,21 @@ h1, h2, h3, h4, h5, h6 {
     margin-left: 70px !important;
 }
 
-/* Mobile Sidebar Overlay */
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.sidebar-overlay.show {
-    display: block;
-    opacity: 1;
-}
+/* NOTE: the actual mobile backdrop element created by sidebar.js is
+   #sidebarBackdrop (see rule further below). The .sidebar-overlay rules
+   that used to live here were dead code — sidebar.js never adds that
+   class to anything — so they were removed to avoid confusion. */
 
 @media (max-width: 1024px) {
+
+    /* FIX: the sidebar must default to hidden (off-canvas) on mobile/tablet
+       widths. Without this, #sidebar has no transform at all by default,
+       so it renders fully visible on top of the page content on first
+       load, and the toggle button appears to do nothing because there is
+       no "closed" state to transition from/to. */
+    #sidebar {
+        transform: translateX(-100%);
+    }
 
     #sidebar.sidebar-open {
         transform: translateX(0);
@@ -435,15 +434,19 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Dark backdrop shown behind the sidebar when it's open as an overlay
-   on mobile/tablet — tapping it closes the sidebar. */
+   on mobile/tablet — tapping it closes the sidebar. pointer-events is
+   explicitly toggled so a hidden/transitioning backdrop can never
+   intercept taps even if display/opacity timing overlaps. */
 #sidebarBackdrop {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.45);
     z-index: 999;
+    pointer-events: none;
 }
 
 #sidebarBackdrop.show {
     display: block;
+    pointer-events: auto;
 }

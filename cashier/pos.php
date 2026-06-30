@@ -355,7 +355,7 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
     <title>Point of Sale - Gym Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="../assets/style.css" rel="stylesheet">
+    <link href="../assets/style.css?v=20260630d" rel="stylesheet">
     <style>
         .pos-item {
             cursor: pointer;
@@ -514,32 +514,32 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
                 <ul class="nav flex-column">
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="dashboard.php">
-                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            <i class="fas fa-tachometer-alt me-2"></i><span>Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="members.php">
-                            <i class="fas fa-users me-2"></i>Members
+                            <i class="fas fa-users me-2"></i><span>Members</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?> active" href="pos.php">
-                            <i class="fas fa-cash-register me-2"></i>Point of Sale
+                            <i class="fas fa-cash-register me-2"></i><span>Point of Sale</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="attendance.php">
-                            <i class="fas fa-calendar-check me-2"></i>Attendance
+                            <i class="fas fa-calendar-check me-2"></i><span>Attendance</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../change_password.php">
-                            <i class="fas fa-key me-2"></i>Change Password
+                            <i class="fas fa-key me-2"></i><span>Change Password</span>
                         </a>
                     </li>
                     <li class="nav-item mt-4">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../logout.php">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            <i class="fas fa-sign-out-alt me-2"></i><span>Logout</span>
                         </a>
                     </li>
                 </ul>
@@ -556,7 +556,7 @@ if ($recent_sales && $recent_sales->num_rows > 0) {
                     </button>
                     <span class="navbar-brand mb-0 h1">Point of Sale - <?php echo htmlspecialchars($user['fullname']); ?> (Cashier)</span>
                     <a href="../admin/backup_db.php" class="btn btn-warning">
-                        <i class="fas fa-download me-2"></i>Backup Database
+                        <i class="fas fa-download me-2"></i><span>Backup Database</span>
                     </a>
                 </div>
             </nav>

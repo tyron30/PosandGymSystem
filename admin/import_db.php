@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['sql_file'])) {
     <title>Import Database - Gym Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="../assets/style.css" rel="stylesheet">
+    <link href="../assets/style.css?v=20260630d" rel="stylesheet">
 </head>
 <body>
     <div class="d-flex">
@@ -91,22 +91,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['sql_file'])) {
                 <ul class="nav flex-column">
                     <li class="nav-item mb-2">
                         <a class="nav-link text-white" href="dashboard.php">
-                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            <i class="fas fa-tachometer-alt me-2"></i><span>Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link text-white" href="members.php">
-                            <i class="fas fa-users me-2"></i>Members
+                            <i class="fas fa-users me-2"></i><span>Members</span>
                         </a>
                     </li>
                     <li class="nav-item mb-2">
                         <a class="nav-link text-white" href="settings.php">
-                            <i class="fas fa-cog me-2"></i>Settings
+                            <i class="fas fa-cog me-2"></i><span>Settings</span>
                         </a>
                     </li>
                     <li class="nav-item mt-4">
                         <a class="nav-link text-white" href="../logout.php">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            <i class="fas fa-sign-out-alt me-2"></i><span>Logout</span>
                         </a>
                     </li>
                 </ul>
