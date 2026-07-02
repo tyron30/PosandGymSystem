@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 include "config/db.php";
 
 $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
@@ -33,7 +33,7 @@ if ($result->num_rows === 0) {
     $is_expired = ($today > $member['end_date']) || in_array($status, ['expired', 'inactive']);
 
     if ($is_expired) {
-        $response = ['error' => 'Membership expired. Please visit the front desk to renew.'];
+        $response = ['error' => 'Membership expired. Please renew to continue.'];
     } else {
         $check_stmt = $conn->prepare(
             "SELECT id, checkin_time, checkout_time,

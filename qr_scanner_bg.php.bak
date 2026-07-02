@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * qr_scanner_bg.php  —  Always-On Background QR Attendance Scanner
  * Place at: PosandGymSystem/qr_scanner_bg.php
@@ -396,7 +396,7 @@ const voices = {
     speak(`Check-out successful. Goodbye, ${name}. You stayed for ${duration}.`);
   },
   expired(name) {
-    speak(`Sorry, ${name ? name + ', your' : 'this'} membership has expired. Please renew at the front desk.`);
+    speak(`Access denied. Membership expired${name ? ' for ' + name : ''}. Please renew your membership.`);
   },
   unknown() {
     speak('Access denied. QR code not recognized. Please see the staff.');
@@ -682,7 +682,7 @@ function processQR(token) {
         const name = extractName(msg, 'for ') || '';
         beeps.error();
         flash('#ef4444');
-        showResult('error', name || 'Expired Member', 'Membership has expired.', 'Please visit the front desk to renew.');
+        showResult('error', name || 'Expired Member', msg, 'Please renew membership at the front desk.');
         addLog('error', name || 'Expired Member', msg);
         voices.expired(name);
 
