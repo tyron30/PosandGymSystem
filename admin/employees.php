@@ -122,6 +122,11 @@ $employees = $conn->query("SELECT * FROM users ORDER BY id DESC");
                             <i class="fas fa-user-tie me-2"></i><span>Employees</span>
                         </a>
                     </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="website_settings.php">
+                            <i class="fas fa-globe me-2"></i><span>Website</span>
+                        </a>
+                    </li>
                       <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="settings.php">
                             <i class="fas fa-cog me-2"></i><span>Settings</span>

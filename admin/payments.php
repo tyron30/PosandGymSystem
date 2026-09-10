@@ -142,6 +142,11 @@ $selected_member_id = isset($_GET['member_id']) ? (int)$_GET['member_id'] : null
                         </a>
                     </li>
                     <li class="nav-item mb-2">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="website_settings.php">
+                            <i class="fas fa-globe me-2"></i><span>Website</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
                         <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?> active" href="settings.php">
                             <i class="fas fa-cog me-2"></i><span>Settings</span>
                         </a>
