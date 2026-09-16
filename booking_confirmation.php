@@ -231,7 +231,7 @@ $plan_label  = $plan_labels[$b['plan_type']] ?? ucfirst($b['plan_type']);
   <!-- Print buttons (hidden on print) -->
   <div class="print-bar">
     <button class="btn-print primary" onclick="window.print()">🖨️ Print This Page</button>
-    <button class="btn-print secondary" onclick="window.history.back()">← Back</button>
+    <a href="admin/website_settings.php" class="btn-print secondary" style="text-decoration:none;">← Back to Website</a>
   </div>
 
   <div class="watermark"><?php echo htmlspecialchars($gym_name); ?> · Online Booking System</div>
